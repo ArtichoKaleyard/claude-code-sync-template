@@ -1,5 +1,9 @@
 # Claude Code 配置同步仓库
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-blue)](#脚本版本说明)
+[![Sync](https://img.shields.io/badge/sync-Gitea%20→%20GitHub-green)](#)
+
 多设备同步 Claude Code 的配置、记忆、技能和工作脚本。
 
 ## 从模板开始使用
