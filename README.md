@@ -2,6 +2,59 @@
 
 多设备同步 Claude Code 的配置、记忆、技能和工作脚本。
 
+## 从模板开始使用
+
+> ⚠️ **必须使用私有仓库**
+> 同步内容包含 AI 记忆、个人配置和认证 Token，请务必将你的配置仓库设为 **Private**，切勿公开存储。
+
+### 第一步：创建你自己的私有仓库
+
+在 GitHub 点击 **Use this template → Create a new repository**，设为 **Private**。也可以在 Gitea 等自托管 Git 服务上创建私有仓库。
+
+### 第二步：克隆到本地
+
+```bash
+git clone https://YOUR_USERNAME:YOUR_TOKEN@YOUR_GIT_HOST/YOUR_USERNAME/YOUR_REPO.git ~/claude-config-sync
+```
+
+> 推荐将 Token 嵌入 URL，脚本后续的推送操作无需额外认证。
+
+### 第三步：配置同步清单
+
+```bash
+cd ~/claude-config-sync
+cp sync.conf.example sync.conf
+```
+
+按需编辑 `sync.conf`，指定要同步的文件和目录（详见下方说明）。
+
+### 第四步：恢复配置
+
+```bash
+./restore.sh           # Linux/macOS
+.\restore.ps1          # Windows PowerShell
+```
+
+脚本会将仓库内容应用到 `~/.claude/` 和工作目录。
+
+### 第五步：登录 Claude Code
+
+```bash
+claude setup-token
+```
+
+### 第六步：完成 Skill 初始化
+
+在 Claude Code 中调用：
+
+```
+/sync-claude-config
+```
+
+首次调用时，Claude 会自动读取仓库 URL 并将其写入 Skill，之后直接使用无需再次配置。
+
+---
+
 ## 目录结构
 
 ```
