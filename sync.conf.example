@@ -1,0 +1,25 @@
+# Claude Code 配置同步清单（示例）
+# 格式：<type> <base> <src> <dest>
+#
+# type: file | dir
+# base: claude_home | workspace
+# src:  相对于 base 目录的路径
+# dest: 相对于仓库根目录的路径
+#
+# dir 类型为覆盖同步（不删除目标中已有但源中没有的文件）
+# 移除条目只停止追踪，不删除已同步的文件
+#
+# project memory 由脚本内置处理，不在此配置
+# workspace keep 与 workspace-scripts 互为别名（dir workspace keep workspace-scripts）
+
+# 全局设置（模型、语言等）
+file  claude_home  settings.json  claude/settings/settings.json
+
+# 全局 CLAUDE.md（可选）
+file  claude_home  CLAUDE.md      claude/CLAUDE.md
+
+# 自定义 Skills（整个目录）
+dir   claude_home  skills         claude/skills
+
+# workspace keep/ 脚本
+dir   workspace    keep           workspace-scripts
