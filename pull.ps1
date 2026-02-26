@@ -5,7 +5,8 @@ param(
     [string]$ClaudeHome = $env:CLAUDE_HOME,
     [string]$ClaudeWorkspace = $env:CLAUDE_WORKSPACE,
     [string]$ClaudeCodeRoot = $env:CLAUDECODE_ROOT,
-    [switch]$NonInteractive
+    [switch]$NonInteractive,
+    [switch]$ApplyMissingCc
 )
 
 $ErrorActionPreference = "Stop"
@@ -73,8 +74,7 @@ function Resolve-CcTarget {
     param([string]$Rel)
     if (-not $ClaudeCodeRoot) { return "" }
     $ccHash = Path-To-Hash "$($ClaudeCodeRoot.TrimEnd('\', '/'))/$Rel"
-    $p = Join-Path $ClaudeHome "projects\$ccHash"
-    if (Test-Path $p) { return Join-Path $p "memory" } else { return "" }
+    return Join-Path $ClaudeHome "projects\$ccHash\memory"
 }
 
 # ──────────────────────────────────────────────────────────────
@@ -300,7 +300,16 @@ if (-not (Test-Path $MemoryBase) -or -not (Get-ChildItem $MemoryBase -ErrorActio
                 $rel = $_.Name
                 $ccSubPath = $_.FullName
                 $target = Resolve-CcTarget $rel
-                if (-not $target) { Write-Host "    ⏭  _cc/$rel（本机无此项目，跳过）" -ForegroundColor Gray; return }
+                if (-not $target) { Write-Host "    ⏭  _cc/$rel（CLAUDECODE_ROOT 未配置，跳过）" -ForegroundColor Gray; return }
+                $ccProjectDir = Split-Path $target -Parent
+                if (-not (Test-Path $ccProjectDir)) {
+                    if ($ClaudeCodeRoot -and (Test-Path (Join-Path $ClaudeCodeRoot $rel))) {
+                        Write-ColorOutput "    ⚠️  _cc/$rel（仓库含此项目记忆，但本机未在此目录打开过 Claude；疑似旧设备配置迁移，建议执行 restore.ps1）" "Yellow"
+                    } else {
+                        Write-Host "    ⏭  _cc/$rel（本机无此项目，跳过）" -ForegroundColor Gray
+                    }
+                    if (-not $ApplyMissingCc) { return }
+                }
                 $null = New-Item -ItemType Directory -Path $target -Force
                 $dirHasSkip = $false
                 Get-ChildItem -Path $ccSubPath -Recurse -File | ForEach-Object {

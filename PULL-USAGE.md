@@ -50,6 +50,37 @@ cd ~\claude-config-sync
 .\pull.ps1 -ClaudeWorkspace "C:\Users\YourName\my-workspace"
 ```
 
+### Windows Git Bash（AI 使用）
+
+```bash
+cd ~/claude-config-sync
+./pull-windows.sh
+```
+
+## 可选参数
+
+### `--apply-missing-cc` / `-ApplyMissingCc`
+
+当仓库中有某个 `_cc/` 子项目的记忆，但本机 `~/.claude/projects/` 中尚未有对应目录时（该项目从未在本机打开过 Claude），默认行为：
+
+- 本地存在对应源文件夹（`CLAUDECODE_ROOT/<项目名>`）→ 显示黄色警告，建议执行 restore 脚本，**跳过**
+- 本地不存在对应源文件夹 → 静默跳过
+
+加上 `--apply-missing-cc` / `-ApplyMissingCc` 后，无论哪种情况都会自动 `mkdir -p` 并应用记忆。
+
+> **前提**：`CLAUDECODE_ROOT` 环境变量必须已配置，否则该参数无效（脚本无法确定路径）。
+
+```bash
+# Linux/macOS
+./pull.sh --apply-missing-cc
+
+# Windows Git Bash（AI 使用）
+./pull-windows.sh --apply-missing-cc
+
+# Windows PowerShell（-ApplyMissingCc 为 switch 参数）
+.\pull.ps1 -ApplyMissingCc
+```
+
 ## 环境变量
 
 | 变量 | 说明 | 默认值 |
@@ -185,5 +216,5 @@ ls ~/claude-config-sync/workspace-scripts
 
 ---
 
-**最后更新**: 2026-02-24
-**支持平台**: Linux, macOS, Windows (PowerShell 5.1+)
+**最后更新**: 2026-02-27
+**支持平台**: Linux, macOS, Windows (PowerShell 5.1+), Windows Git Bash

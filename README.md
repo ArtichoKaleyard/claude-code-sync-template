@@ -105,6 +105,9 @@ cd ~/claude-config-sync && ./pull.sh
 
 # Windows PowerShell
 cd ~\claude-config-sync; .\pull.ps1
+
+# Windows Git Bash（AI 使用）
+cd ~/claude-config-sync && ./pull-windows.sh
 ```
 
 ### 推送变更
@@ -115,9 +118,31 @@ cd ~/claude-config-sync && ./update.sh "更新 MEMORY.md"
 
 # Windows PowerShell
 cd ~\claude-config-sync; .\update.ps1 -Message "更新 MEMORY.md"
+
+# Windows Git Bash（AI 使用）
+cd ~/claude-config-sync && ./update-windows.sh "更新 MEMORY.md"
 ```
 
 update 脚本自动处理 `git add / commit / push`，只需提供 commit message。
+
+### 可选参数：`--apply-missing-cc` / `-ApplyMissingCc`
+
+当仓库中有某个 `_cc/` 子项目的记忆，但本机 `~/.claude/projects/` 中尚未有对应目录（该项目从未在本机打开过 Claude），pull 脚本默认只显示警告并跳过。加上此参数后，脚本会自动创建目录并应用记忆。
+
+> **注意**：仅在 `CLAUDECODE_ROOT` 已配置时有效，否则脚本无法确定路径。
+
+```bash
+# Linux/macOS
+./pull.sh --apply-missing-cc
+
+# Windows PowerShell
+.\pull.ps1 -ApplyMissingCc
+
+# Windows Git Bash（AI 使用）
+./pull-windows.sh --apply-missing-cc
+```
+
+通常情况下建议在新设备上使用 `restore.sh` / `restore-windows.sh` / `restore.ps1` 代替，因为 restore 脚本设计上就会主动创建所有项目目录。
 
 ## 新设备恢复
 
@@ -127,15 +152,17 @@ git clone https://YOUR_USERNAME:YOUR_TOKEN@YOUR_GIT_HOST/YOUR_USERNAME/YOUR_REPO
 
 # 2. 恢复配置
 cd ~/claude-config-sync
-./restore.sh           # Linux/macOS
-.\restore.ps1          # Windows PowerShell
+./restore.sh             # Linux/macOS
+.\restore.ps1            # Windows PowerShell
+./restore-windows.sh     # Windows Git Bash（AI 使用）
 
 # 3. 登录
 claude setup-token
 
 # 4. 验证
-./verify.sh            # Linux/macOS
-.\verify.ps1           # Windows PowerShell
+./verify.sh              # Linux/macOS
+.\verify.ps1             # Windows PowerShell
+./verify-windows.sh      # Windows Git Bash（AI 使用）
 ```
 
 ## 环境变量（可选）
@@ -154,4 +181,4 @@ claude setup-token
 | `.ps1` | Windows PowerShell | 用户 |
 | `-windows.sh` | Windows Git Bash | AI（Bash 工具） |
 
-**最后更新**: 2026-02-24
+**最后更新**: 2026-02-27

@@ -31,6 +31,11 @@ _ps1_bom() {
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${SCRIPT_DIR}"
 
+APPLY_MISSING_CC=false
+for arg in "$@"; do
+    [ "$arg" = "--apply-missing-cc" ] && APPLY_MISSING_CC=true
+done
+
 CLAUDE_HOME="${CLAUDE_HOME:-$USERPROFILE/.claude}"
 
 if [ -n "${CLAUDE_WORKSPACE}" ]; then
@@ -82,11 +87,7 @@ resolve_cc_target() {
     [ -z "$CLAUDECODE_ROOT" ] && echo "" && return
     local cc_hash
     cc_hash=$(path_to_hash "${CLAUDECODE_ROOT%\\}/${rel}")
-    if [ -d "${CLAUDE_HOME}/projects/${cc_hash}" ]; then
-        echo "${CLAUDE_HOME}/projects/${cc_hash}/memory"
-    else
-        echo ""
-    fi
+    echo "${CLAUDE_HOME}/projects/${cc_hash}/memory"
 }
 
 # ──────────────────────────────────────────────────────────────
@@ -320,8 +321,17 @@ else
                 rel=$(basename "$cc_subdir")
                 target=$(resolve_cc_target "$rel")
                 if [ -z "$target" ]; then
-                    echo "    ⏭  _cc/${rel}（本机无此项目，跳过）"
+                    echo "    ⏭  _cc/${rel}（CLAUDECODE_ROOT 未配置，跳过）"
                     continue
+                fi
+                cc_project_dir="$(dirname "$target")"
+                if [ ! -d "$cc_project_dir" ]; then
+                    if [ -d "${CLAUDECODE_ROOT%\\}/${rel}" ]; then
+                        echo -e "    ${YELLOW}⚠️  _cc/${rel}（仓库含此项目记忆，但本机未在此目录打开过 Claude；疑似旧设备配置迁移，建议执行 restore-windows.sh）${NC}"
+                    else
+                        echo "    ⏭  _cc/${rel}（本机无此项目，跳过）"
+                    fi
+                    $APPLY_MISSING_CC || continue
                 fi
                 mkdir -p "$target"
                 dir_has_skip=false
