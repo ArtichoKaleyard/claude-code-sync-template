@@ -159,6 +159,40 @@ else
     done
 fi
 
+# 3. 持久化环境变量到 shell 配置文件
+echo "  💾 持久化环境变量..."
+if [ -n "$ZSH_VERSION" ] || [ "$(basename "${SHELL:-}")" = "zsh" ]; then
+    _RC_FILE="$HOME/.zshrc"
+else
+    _RC_FILE="$HOME/.bashrc"
+fi
+_write_env_sh() {
+    local var_name="$1"
+    local var_value="$2"
+    if grep -q "^export ${var_name}=" "$_RC_FILE" 2>/dev/null; then
+        local existing
+        existing=$(grep "^export ${var_name}=" "$_RC_FILE" | tail -1 | sed "s/^export ${var_name}=//; s/['\"]//g")
+        if [ "$existing" = "$var_value" ]; then
+            echo "    ℹ️  ${var_name} 已存在（相同值，跳过）"
+        else
+            echo "    ⚠️  $_RC_FILE 中 ${var_name} 值不同，请手动更新"
+        fi
+    else
+        printf '\nexport %s="%s"\n' "$var_name" "$var_value" >> "$_RC_FILE"
+        echo "    ✅ ${var_name} -> $_RC_FILE"
+    fi
+}
+if [ -n "$CLAUDECODE_ROOT" ]; then
+    _write_env_sh "CLAUDECODE_ROOT" "$CLAUDECODE_ROOT"
+fi
+DEFAULT_WORKSPACE="$HOME/claude-workspace"
+if [ -n "$WORKSPACE_PATH" ] && [ "$WORKSPACE_PATH" != "$DEFAULT_WORKSPACE" ]; then
+    _write_env_sh "CLAUDE_WORKSPACE" "$WORKSPACE_PATH"
+fi
+if [ -z "$CLAUDECODE_ROOT" ]; then
+    echo "    ℹ️  CLAUDECODE_ROOT 未提供，跳过"
+fi
+
 echo ""
 echo -e "${GREEN}✅ 配置恢复完成！${NC}"
 echo ""

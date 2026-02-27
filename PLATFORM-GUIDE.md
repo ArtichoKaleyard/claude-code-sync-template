@@ -8,19 +8,32 @@
 
 ---
 
-## 📋 环境变量配置（可选）
+## 📋 环境变量配置
 
-为了更好的跨平台兼容性，建议设置以下环境变量：
+| 变量 | 作用 | 默认值 |
+|------|------|--------|
+| `CLAUDECODE_ROOT` | ClaudeCode 根目录，用于定位 `_cc/` 子项目并同步其记忆 | 无（未设置则跳过 `_cc/`） |
+| `CLAUDE_WORKSPACE` | claude-workspace 工作目录路径 | `~/claude-workspace` |
+| `CLAUDE_HOME` | Claude Code 配置目录 | `~/.claude` |
 
-### Linux/macOS
+### restore 自动写入（推荐）
 
-在 `~/.bashrc` 或 `~/.zshrc` 中添加：
+**运行 `restore` 脚本时，交互输入 `CLAUDECODE_ROOT` 路径后，脚本会自动持久化，无需手动操作：**
+
+- `restore.ps1` → 写入 Windows 用户级环境变量（所有新开的 PowerShell / Git Bash 均继承）
+- `restore-windows.sh` → 写入 Windows 用户级环境变量 + `~/.bashrc`
+- `restore.sh` → 写入 `~/.bashrc` 或 `~/.zshrc`（自动检测当前 shell）
+
+重新打开终端后即生效。
+
+### 手动设置（跳过了 restore，或需要在 pull 前提前配置）
+
+#### Linux/macOS
+
+追加到 `~/.bashrc` 或 `~/.zshrc`：
 
 ```bash
-# Claude Code 配置
-export CLAUDE_HOME="$HOME/.claude"                # Claude 配置目录
-export CLAUDE_WORKSPACE="$HOME/claude-workspace"  # 工作目录
-export CLAUDECODE_ROOT="$HOME/Documents/ClaudeCode"  # ClaudeCode 项目根目录（可选）
+export CLAUDECODE_ROOT="$HOME/Documents/ClaudeCode"
 ```
 
 应用配置：
@@ -28,26 +41,24 @@ export CLAUDECODE_ROOT="$HOME/Documents/ClaudeCode"  # ClaudeCode 项目根目�
 source ~/.bashrc  # 或 source ~/.zshrc
 ```
 
-### Windows (PowerShell)
+#### Windows (PowerShell)
 
-**方式一：永久设置（推荐）**
+**永久设置（用户级，推荐）：**
 
-以管理员身份运行 PowerShell：
 ```powershell
-[Environment]::SetEnvironmentVariable('CLAUDE_HOME', "$env:USERPROFILE\.claude", 'User')
-[Environment]::SetEnvironmentVariable('CLAUDE_WORKSPACE', "$env:USERPROFILE\claude-workspace", 'User')
-[Environment]::SetEnvironmentVariable('CLAUDECODE_ROOT', "$env:USERPROFILE\Documents\ClaudeCode", 'User')  # 可选
+[System.Environment]::SetEnvironmentVariable('CLAUDECODE_ROOT', "$env:USERPROFILE\Documents\ClaudeCode", 'User')
 ```
 
-**方式二：当前会话**
+重开 PowerShell 或 Git Bash 后生效。
+
+**当前会话（临时）：**
 ```powershell
-$env:CLAUDE_HOME = "$env:USERPROFILE\.claude"
-$env:CLAUDE_WORKSPACE = "$env:USERPROFILE\claude-workspace"
+$env:CLAUDECODE_ROOT = "$env:USERPROFILE\Documents\ClaudeCode"
 ```
 
-**方式三：图形界面**
+**图形界面：**
 - 打开"系统属性" → "高级" → "环境变量"
-- 在"用户变量"中添加上述变量
+- 在"用户变量"中添加 `CLAUDECODE_ROOT`
 
 ---
 
@@ -139,6 +150,7 @@ Get-Help .\update.ps1 -Detailed
 3. ✅ 交互式确认路径（无环境变量时）
 4. ✅ 显示恢复后的路径信息
 5. ✅ PowerShell 版本支持非交互模式
+6. ✅ 自动将 `CLAUDECODE_ROOT` 等变量持久化到系统（Windows 用户级环境变量 / shell rc 文件）
 
 **路径转换规则：**
 - Linux: `/home/user/claude-workspace` → `~/.claude/projects/-home-user-claude-workspace/memory`
@@ -368,5 +380,5 @@ claude-sync
 
 ---
 
-**最后更新**: 2026-02-24
+**最后更新**: 2026-02-28
 **PowerShell 版本**: 5.1+ (Windows PowerShell) 或 7+ (PowerShell Core)

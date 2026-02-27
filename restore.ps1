@@ -171,6 +171,34 @@ if (-not (Test-Path $MemoryBase) -or -not (Get-ChildItem $MemoryBase -ErrorActio
     }
 }
 
+# 3. 持久化环境变量到 Windows 用户级环境变量
+Write-Host "  💾 持久化环境变量..."
+$envWrote = $false
+if ($ClaudeCodeRoot) {
+    $existing = [System.Environment]::GetEnvironmentVariable("CLAUDECODE_ROOT", "User")
+    if ($existing -eq $ClaudeCodeRoot) {
+        Write-Host "    ℹ️  CLAUDECODE_ROOT 已存在（相同值，跳过）" -ForegroundColor Gray
+    } else {
+        [System.Environment]::SetEnvironmentVariable("CLAUDECODE_ROOT", $ClaudeCodeRoot, "User")
+        Write-ColorOutput "    ✅ CLAUDECODE_ROOT -> 用户环境变量" "Green"
+        $envWrote = $true
+    }
+}
+$defaultWorkspace = Join-Path $env:USERPROFILE "claude-workspace"
+if ($WorkspacePath -and $WorkspacePath -ne $defaultWorkspace) {
+    $existingWs = [System.Environment]::GetEnvironmentVariable("CLAUDE_WORKSPACE", "User")
+    if ($existingWs -eq $WorkspacePath) {
+        Write-Host "    ℹ️  CLAUDE_WORKSPACE 已存在（相同值，跳过）" -ForegroundColor Gray
+    } else {
+        [System.Environment]::SetEnvironmentVariable("CLAUDE_WORKSPACE", $WorkspacePath, "User")
+        Write-ColorOutput "    ✅ CLAUDE_WORKSPACE -> 用户环境变量" "Green"
+        $envWrote = $true
+    }
+}
+if (-not $ClaudeCodeRoot -and -not $envWrote) {
+    Write-Host "    ℹ️  CLAUDECODE_ROOT 未提供，跳过" -ForegroundColor Gray
+}
+
 Write-Host ""
 Write-ColorOutput "✅ 配置恢复完成！" "Green"
 Write-Host ""

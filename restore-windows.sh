@@ -155,6 +155,43 @@ else
     done
 fi
 
+# 3. 持久化环境变量
+echo "  💾 持久化环境变量..."
+_write_env_win() {
+    local var_name="$1"
+    local var_value="$2"
+    local wrote=0
+    # 写入 Windows 用户级环境变量（PowerShell 和新开的 Git Bash 窗口都能继承）
+    if powershell.exe -NoProfile -NonInteractive -Command "[System.Environment]::SetEnvironmentVariable('${var_name}', '${var_value}', 'User')" 2>/dev/null; then
+        echo "    ✅ ${var_name} -> Windows 用户环境变量"
+        wrote=1
+    fi
+    # 同时追加到 ~/.bashrc 作为备份
+    local bashrc="$HOME/.bashrc"
+    if grep -q "^export ${var_name}=" "$bashrc" 2>/dev/null; then
+        local existing
+        existing=$(grep "^export ${var_name}=" "$bashrc" | tail -1 | sed "s/^export ${var_name}=//; s/['\"]//g")
+        if [ "$existing" != "$var_value" ]; then
+            echo "    ⚠️  $bashrc 中 ${var_name} 值不同，请手动更新"
+        fi
+    else
+        printf '\nexport %s="%s"\n' "$var_name" "$var_value" >> "$bashrc"
+        echo "    ✅ ${var_name} -> $bashrc"
+        wrote=1
+    fi
+    [ "$wrote" -eq 0 ] && echo "    ℹ️  ${var_name} 已存在（跳过）"
+}
+if [ -n "$CLAUDECODE_ROOT" ]; then
+    _write_env_win "CLAUDECODE_ROOT" "$CLAUDECODE_ROOT"
+fi
+DEFAULT_WORKSPACE="$USERPROFILE/claude-workspace"
+if [ -n "$WORKSPACE_PATH" ] && [ "$WORKSPACE_PATH" != "$DEFAULT_WORKSPACE" ]; then
+    _write_env_win "CLAUDE_WORKSPACE" "$WORKSPACE_PATH"
+fi
+if [ -z "$CLAUDECODE_ROOT" ]; then
+    echo "    ℹ️  CLAUDECODE_ROOT 未提供，跳过"
+fi
+
 echo ""
 echo -e "${GREEN}✅ 配置恢复完成！${NC}"
 echo ""

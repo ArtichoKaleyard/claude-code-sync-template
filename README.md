@@ -39,7 +39,7 @@ cp sync.conf.example sync.conf
 .\restore.ps1          # Windows PowerShell
 ```
 
-脚本会将仓库内容应用到 `~/.claude/` 和工作目录。
+脚本会将仓库内容应用到 `~/.claude/` 和工作目录，并将 `CLAUDECODE_ROOT` 等环境变量**自动写入系统**（重开终端后生效，无需手动配置）。
 
 ### 第五步：登录 Claude Code
 
@@ -173,6 +173,8 @@ claude setup-token
 | `CLAUDE_WORKSPACE` | 工作目录 | `~/claude-workspace` / `%USERPROFILE%\claude-workspace` |
 | `CLAUDECODE_ROOT` | ClaudeCode 项目根目录（用于同步 `_cc/` 子项目记忆） | 未设置则跳过 `_cc/` |
 
+运行 `restore` 脚本时，交互输入路径后会**自动持久化**上述变量（Windows 写用户级环境变量，Linux/macOS 追加到 rc 文件），通常无需手动设置。如需手动配置，详见 [PLATFORM-GUIDE.md](PLATFORM-GUIDE.md)。
+
 ## 脚本版本说明
 
 | 后缀 | 平台 | 执行者 |
@@ -181,4 +183,4 @@ claude setup-token
 | `.ps1` | Windows PowerShell | 用户 |
 | `-windows.sh` | Windows Git Bash | AI（Bash 工具） |
 
-**最后更新**: 2026-02-27
+**最后更新**: 2026-02-28
