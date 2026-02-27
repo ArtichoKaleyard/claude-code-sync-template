@@ -16,14 +16,9 @@ cd "${SCRIPT_DIR}"
 
 CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
 
-if [ -n "${CLAUDE_WORKSPACE}" ]; then
-    WORKSPACE_PATH="${CLAUDE_WORKSPACE}"
-elif [ -d "$HOME/claude-workspace" ]; then
-    WORKSPACE_PATH="$HOME/claude-workspace"
-else
-    read -p "📂 请输入工作目录路径 [~/claude-workspace]: " WORKSPACE_INPUT
-    WORKSPACE_PATH="${WORKSPACE_INPUT:-$HOME/claude-workspace}"
-fi
+_default_ws="${CLAUDE_WORKSPACE:-$HOME/claude-workspace}"
+read -p "📂 请输入工作目录路径 [$_default_ws]: " WORKSPACE_INPUT
+WORKSPACE_PATH="${WORKSPACE_INPUT:-$_default_ws}"
 WORKSPACE_PATH="${WORKSPACE_PATH/#\~/$HOME}"
 
 if [ -n "${CLAUDECODE_ROOT}" ]; then
@@ -185,10 +180,7 @@ _write_env_sh() {
 if [ -n "$CLAUDECODE_ROOT" ]; then
     _write_env_sh "CLAUDECODE_ROOT" "$CLAUDECODE_ROOT"
 fi
-DEFAULT_WORKSPACE="$HOME/claude-workspace"
-if [ -n "$WORKSPACE_PATH" ] && [ "$WORKSPACE_PATH" != "$DEFAULT_WORKSPACE" ]; then
-    _write_env_sh "CLAUDE_WORKSPACE" "$WORKSPACE_PATH"
-fi
+_write_env_sh "CLAUDE_WORKSPACE" "$WORKSPACE_PATH"
 if [ -z "$CLAUDECODE_ROOT" ]; then
     echo "    ℹ️  CLAUDECODE_ROOT 未提供，跳过"
 fi

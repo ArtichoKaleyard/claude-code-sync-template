@@ -22,17 +22,12 @@ Set-Location $ScriptDir
 
 if (-not $ClaudeHome) { $ClaudeHome = Join-Path $env:USERPROFILE ".claude" }
 
-$WorkspacePath = $null
-if ($ClaudeWorkspace) {
-    $WorkspacePath = $ClaudeWorkspace
-} elseif (Test-Path (Join-Path $env:USERPROFILE "claude-workspace")) {
-    $WorkspacePath = Join-Path $env:USERPROFILE "claude-workspace"
-} elseif (-not $NonInteractive) {
-    $Default = Join-Path $env:USERPROFILE "claude-workspace"
-    $Input = Read-Host "📂 请输入工作目录路径 [$Default]"
-    $WorkspacePath = if ([string]::IsNullOrWhiteSpace($Input)) { $Default } else { $Input }
+$defaultWs = if ($ClaudeWorkspace) { $ClaudeWorkspace } else { Join-Path $env:USERPROFILE "claude-workspace" }
+if (-not $NonInteractive) {
+    $WsInput = Read-Host "📂 请输入工作目录路径 [$defaultWs]"
+    $WorkspacePath = if ([string]::IsNullOrWhiteSpace($WsInput)) { $defaultWs } else { $WsInput }
 } else {
-    $WorkspacePath = Join-Path $env:USERPROFILE "claude-workspace"
+    $WorkspacePath = $defaultWs
 }
 $WorkspacePath = [System.Environment]::ExpandEnvironmentVariables($WorkspacePath)
 
@@ -184,18 +179,14 @@ if ($ClaudeCodeRoot) {
         $envWrote = $true
     }
 }
-$defaultWorkspace = Join-Path $env:USERPROFILE "claude-workspace"
-if ($WorkspacePath -and $WorkspacePath -ne $defaultWorkspace) {
-    $existingWs = [System.Environment]::GetEnvironmentVariable("CLAUDE_WORKSPACE", "User")
-    if ($existingWs -eq $WorkspacePath) {
-        Write-Host "    ℹ️  CLAUDE_WORKSPACE 已存在（相同值，跳过）" -ForegroundColor Gray
-    } else {
-        [System.Environment]::SetEnvironmentVariable("CLAUDE_WORKSPACE", $WorkspacePath, "User")
-        Write-ColorOutput "    ✅ CLAUDE_WORKSPACE -> 用户环境变量" "Green"
-        $envWrote = $true
-    }
+$existingWs = [System.Environment]::GetEnvironmentVariable("CLAUDE_WORKSPACE", "User")
+if ($existingWs -eq $WorkspacePath) {
+    Write-Host "    ℹ️  CLAUDE_WORKSPACE 已存在（相同值，跳过）" -ForegroundColor Gray
+} else {
+    [System.Environment]::SetEnvironmentVariable("CLAUDE_WORKSPACE", $WorkspacePath, "User")
+    Write-ColorOutput "    ✅ CLAUDE_WORKSPACE -> 用户环境变量" "Green"
 }
-if (-not $ClaudeCodeRoot -and -not $envWrote) {
+if (-not $ClaudeCodeRoot) {
     Write-Host "    ℹ️  CLAUDECODE_ROOT 未提供，跳过" -ForegroundColor Gray
 }
 
