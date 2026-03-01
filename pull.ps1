@@ -303,12 +303,16 @@ if (-not (Test-Path $MemoryBase) -or -not (Get-ChildItem $MemoryBase -ErrorActio
                 if (-not $target) { Write-Host "    ⏭  _cc/$rel（CLAUDECODE_ROOT 未配置，跳过）" -ForegroundColor Gray; return }
                 $ccProjectDir = Split-Path $target -Parent
                 if (-not (Test-Path $ccProjectDir)) {
-                    if ($ClaudeCodeRoot -and (Test-Path (Join-Path $ClaudeCodeRoot $rel))) {
-                        Write-ColorOutput "    ⚠️  _cc/$rel（仓库含此项目记忆，但本机未在此目录打开过 Claude；疑似旧设备配置迁移，建议执行 restore.ps1）" "Yellow"
+                    if ($ApplyMissingCc) {
+                        Write-ColorOutput "    ⚠️  _cc/$rel（本机无此项目，-ApplyMissingCc 强制应用）" "Yellow"
                     } else {
-                        Write-Host "    ⏭  _cc/$rel（本机无此项目，跳过）" -ForegroundColor Gray
+                        if ($ClaudeCodeRoot -and (Test-Path (Join-Path $ClaudeCodeRoot $rel))) {
+                            Write-ColorOutput "    ⚠️  _cc/$rel（仓库含此项目记忆，但本机未在此目录打开过 Claude；疑似旧设备配置迁移，建议执行 restore.ps1）" "Yellow"
+                        } else {
+                            Write-Host "    ⏭  _cc/$rel（本机无此项目，跳过）" -ForegroundColor Gray
+                        }
+                        return
                     }
-                    if (-not $ApplyMissingCc) { return }
                 }
                 $null = New-Item -ItemType Directory -Path $target -Force
                 $dirHasSkip = $false

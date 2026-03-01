@@ -326,12 +326,16 @@ else
                 fi
                 cc_project_dir="$(dirname "$target")"
                 if [ ! -d "$cc_project_dir" ]; then
-                    if [ -d "${CLAUDECODE_ROOT%\\}/${rel}" ]; then
-                        echo -e "    ${YELLOW}⚠️  _cc/${rel}（仓库含此项目记忆，但本机未在此目录打开过 Claude；疑似旧设备配置迁移，建议执行 restore-windows.sh）${NC}"
+                    if $APPLY_MISSING_CC; then
+                        echo -e "    ${YELLOW}⚠️  _cc/${rel}（本机无此项目，--apply-missing-cc 强制应用）${NC}"
                     else
-                        echo "    ⏭  _cc/${rel}（本机无此项目，跳过）"
+                        if [ -d "${CLAUDECODE_ROOT%\\}/${rel}" ]; then
+                            echo -e "    ${YELLOW}⚠️  _cc/${rel}（仓库含此项目记忆，但本机未在此目录打开过 Claude；疑似旧设备配置迁移，建议执行 restore-windows.sh）${NC}"
+                        else
+                            echo "    ⏭  _cc/${rel}（本机无此项目，跳过）"
+                        fi
+                        continue
                     fi
-                    $APPLY_MISSING_CC || continue
                 fi
                 mkdir -p "$target"
                 dir_has_skip=false
