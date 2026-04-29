@@ -255,8 +255,25 @@ else
         case "$type" in
             file)
                 if [ -f "$repo_path" ]; then
-                    apply_file "$src" "$local_path" "$repo_path" "$src"
-                    has_diff "$src" || echo "    ✅ $src"
+                    # settings.json 合并模式：仓库白名单 key 覆盖本地，保留本地非白名单 key
+                    if [ "$src" = "settings.json" ] && [ -f "${SCRIPT_DIR}/settings-filter.conf" ]; then
+                        FILTER_SCRIPT="${SCRIPT_DIR}/filter-settings.py"
+                        if [ -f "$FILTER_SCRIPT" ] && [ -f "$local_path" ]; then
+                            python3 "$FILTER_SCRIPT" "$repo_path" "${SCRIPT_DIR}/settings-filter.conf" --merge "$local_path" > "${local_path}.tmp"
+                            mv "${local_path}.tmp" "$local_path"
+                            echo "    ✅ $src（已合并）"
+                        elif [ -f "$FILTER_SCRIPT" ]; then
+                            # 本地文件不存在，直接用过滤后的仓库版本
+                            python3 "$FILTER_SCRIPT" "$repo_path" "${SCRIPT_DIR}/settings-filter.conf" > "$local_path"
+                            echo "    ✅ $src（已过滤）"
+                        else
+                            apply_file "$src" "$local_path" "$repo_path" "$src"
+                            has_diff "$src" || echo "    ✅ $src"
+                        fi
+                    else
+                        apply_file "$src" "$local_path" "$repo_path" "$src"
+                        has_diff "$src" || echo "    ✅ $src"
+                    fi
                 else
                     echo "    ℹ️  $src 不存在（可选）"
                 fi

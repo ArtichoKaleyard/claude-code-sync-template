@@ -133,7 +133,58 @@ else
 fi
 echo ""
 
-# 总结
+# 7. settings.json 同步过滤器检查
+echo -e "${BLUE}7️⃣  检查 settings.json 同步过滤器${NC}"
+FILTER_CONF="${SCRIPT_DIR}/settings-filter.conf"
+FILTER_SCRIPT="${SCRIPT_DIR}/filter-settings.py"
+REPO_SETTINGS="${SCRIPT_DIR}/claude/settings/settings.json"
+LOCAL_SETTINGS="${CLAUDE_HOME}/settings.json"
+
+if [ -f "$FILTER_CONF" ]; then
+    rule_count=$(grep -v '^\s*#' "$FILTER_CONF" | grep -v '^\s*$' | wc -l)
+    echo -e "${GREEN}✅ settings-filter.conf 存在（${rule_count} 条规则）${NC}"; ((PASSED++))
+
+    # 格式检查
+    if [ -f "$FILTER_SCRIPT" ]; then
+        fmt_errors=$(python3 "$FILTER_SCRIPT" /dev/null "$FILTER_CONF" 2>&1 || true)
+        if echo "$fmt_errors" | grep -q '格式错误'; then
+            echo -e "${RED}❌ filter.conf 格式错误：${NC}"
+            echo "$fmt_errors" | grep '格式错误' | while read -r err; do
+                echo "   $err"
+            done
+            ((FAILED++))
+        else
+            echo "   ✅ 格式检查通过"
+        fi
+    fi
+
+    # 仓库 settings.json 合规检查
+    if [ -f "$REPO_SETTINGS" ] && [ -f "$FILTER_SCRIPT" ]; then
+        check_result=$(python3 "$FILTER_SCRIPT" "$REPO_SETTINGS" "$FILTER_CONF" --check 2>&1)
+        check_exit=$?
+        if [ $check_exit -ne 0 ]; then
+            echo -e "${RED}❌ 仓库 settings.json 含不合规内容：${NC}"
+            echo "$check_result" | grep -E 'BLOCKED|FILTERED|修正建议' | while read -r line; do
+                echo "   $line"
+            done
+            ((FAILED++))
+        else
+            echo "   ✅ 仓库 settings.json 合规"
+        fi
+    fi
+
+    # 本地 settings.json 提示
+    if [ -f "$LOCAL_SETTINGS" ] && [ -f "$FILTER_SCRIPT" ]; then
+        local_check=$(python3 "$FILTER_SCRIPT" "$LOCAL_SETTINGS" "$FILTER_CONF" --check 2>&1)
+        local_exit=$?
+        if [ $local_exit -ne 0 ]; then
+            echo -e "   ${YELLOW}ℹ️  本地 settings.json 有将被过滤的内容（不影响同步，push 时自动剥离）${NC}"
+        fi
+    fi
+else
+    echo -e "   ${BLUE}ℹ️  settings-filter.conf 不存在，跳过过滤检查${NC}"
+fi
+echo ""
 echo -e "${BLUE}════════════════════════════════════════${NC}"
 echo -e "${GREEN}✅ 通过: $PASSED${NC}"
 [ $FAILED -gt 0 ] && echo -e "${RED}❌ 失败: $FAILED${NC}"
