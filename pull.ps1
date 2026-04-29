@@ -253,7 +253,25 @@ if (-not (Test-Path $ConfFile)) {
             "file" {
                 $null = New-Item -ItemType Directory -Path (Split-Path $localPath) -Force
                 if (Test-Path $repoPath) {
-                    if (Has-Diff $src) {
+                    # settings.json 合并模式（调用 Python 过滤器）
+                    if ($src -eq "settings.json") {
+                        $filterConf = Join-Path $ScriptDir "settings-filter.conf"
+                        $filterScript = Join-Path $ScriptDir "filter-settings.py"
+                        if ((Test-Path $filterConf) -and (Test-Path $filterScript) -and (Test-Path $localPath)) {
+                            python3 $filterScript $repoPath $filterConf --merge $localPath | Set-Content -Path $localPath -Encoding UTF8
+                            Write-ColorOutput "    ✅ $src（已合并）" "Green"
+                        } elseif ((Test-Path $filterConf) -and (Test-Path $filterScript)) {
+                            python3 $filterScript $repoPath $filterConf | Set-Content -Path $localPath -Encoding UTF8
+                            Write-ColorOutput "    ✅ $src（已过滤）" "Green"
+                        } elseif (Has-Diff $src) {
+                            Show-Diff $src $localPath $repoPath
+                            $script:SkippedFiles += $src; $script:NeedsReview = $true
+                            Write-ColorOutput "    ⏸  $src（跳过，需审核）" "Yellow"
+                        } else {
+                            Copy-Item $repoPath -Destination $localPath -Force
+                            Write-ColorOutput "    ✅ $src" "Green"
+                        }
+                    } elseif (Has-Diff $src) {
                         Show-Diff $src $localPath $repoPath
                         $script:SkippedFiles += $src; $script:NeedsReview = $true
                         Write-ColorOutput "    ⏸  $src（跳过，需审核）" "Yellow"

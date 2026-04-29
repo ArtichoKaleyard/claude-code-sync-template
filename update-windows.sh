@@ -73,8 +73,20 @@ else
             file)
                 mkdir -p "$(dirname "$repo_path")"
                 if [ -f "$local_path" ]; then
-                    cp "$local_path" "$repo_path"
-                    echo "    ✅ $src"
+                    # settings.json 同步过滤
+                    if [ "$src" = "settings.json" ] && [ -f "${SCRIPT_DIR}/settings-filter.conf" ]; then
+                        FILTER_SCRIPT="${SCRIPT_DIR}/filter-settings.py"
+                        if [ -f "$FILTER_SCRIPT" ]; then
+                            python3 "$FILTER_SCRIPT" "$local_path" "${SCRIPT_DIR}/settings-filter.conf" > "$repo_path"
+                            echo "    ✅ $src（已过滤）"
+                        else
+                            cp "$local_path" "$repo_path"
+                            echo "    ✅ $src"
+                        fi
+                    else
+                        cp "$local_path" "$repo_path"
+                        echo "    ✅ $src"
+                    fi
                 else
                     echo "    ℹ️  $src 不存在（可选）"
                 fi

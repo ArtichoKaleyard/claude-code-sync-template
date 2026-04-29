@@ -81,8 +81,21 @@ if (-not (Test-Path $ConfFile)) {
             "file" {
                 $null = New-Item -ItemType Directory -Path (Split-Path $repoPath) -Force
                 if (Test-Path $localPath) {
-                    Copy-Item $localPath -Destination $repoPath -Force
-                    Write-ColorOutput "    ✅ $src" "Green"
+                    # settings.json 同步过滤（调用 Python 过滤器）
+                    if ($src -eq "settings.json") {
+                        $filterConf = Join-Path $ScriptDir "settings-filter.conf"
+                        $filterScript = Join-Path $ScriptDir "filter-settings.py"
+                        if ((Test-Path $filterConf) -and (Test-Path $filterScript)) {
+                            python3 $filterScript $localPath $filterConf | Set-Content -Path $repoPath -Encoding UTF8
+                            Write-ColorOutput "    ✅ $src（已过滤）" "Green"
+                        } else {
+                            Copy-Item $localPath -Destination $repoPath -Force
+                            Write-ColorOutput "    ✅ $src" "Green"
+                        }
+                    } else {
+                        Copy-Item $localPath -Destination $repoPath -Force
+                        Write-ColorOutput "    ✅ $src" "Green"
+                    }
                 } else {
                     Write-Host "    ℹ️  $src 不存在（可选）" -ForegroundColor Gray
                 }

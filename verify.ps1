@@ -149,6 +149,42 @@ if ($noBomFiles.Count -eq 0) {
 }
 Write-Host ""
 
+# 8. settings.json 同步过滤器检查
+Write-Host "8️⃣  检查 settings.json 同步过滤器" -ForegroundColor Cyan
+$filterConf = Join-Path $ScriptDir "settings-filter.conf"
+$filterScript = Join-Path $ScriptDir "filter-settings.py"
+$repoSettings = Join-Path $ScriptDir "claude/settings/settings.json"
+$localSettings = Join-Path $ClaudeHome "settings.json"
+
+if (Test-Path $filterConf) {
+    $ruleCount = (Get-Content $filterConf | Where-Object { $_ -notmatch '^\s*#' -and $_ -notmatch '^\s*$' }).Count
+    Write-Status "settings-filter.conf 存在（$ruleCount 条规则）" "Pass"; $PASSED++
+
+    if (Test-Path $filterScript) {
+        # 格式检查 & 仓库合规检查
+        $checkOutput = & python3 $filterScript $repoSettings $filterConf --check 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Status "仓库 settings.json 含不合规内容：" "Fail"; $FAILED++
+            $checkOutput | Where-Object { $_ -match 'BLOCKED|FILTERED|修正建议' } | ForEach-Object {
+                Write-Host "   $_" -ForegroundColor Red
+            }
+        } else {
+            Write-Host "   ✅ 仓库 settings.json 合规"
+        }
+
+        # 本地提示
+        if (Test-Path $localSettings) {
+            $localCheck = & python3 $filterScript $localSettings $filterConf --check 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "   ℹ️  本地 settings.json 有将被过滤的内容（不影响同步，push 时自动剥离）" -ForegroundColor Yellow
+            }
+        }
+    }
+} else {
+    Write-Host "   ℹ️  settings-filter.conf 不存在，跳过过滤检查" -ForegroundColor Gray
+}
+Write-Host ""
+
 # 总结
 Write-Host ("=" * 42) -ForegroundColor Cyan
 Write-Status "通过: $PASSED" "Pass"
