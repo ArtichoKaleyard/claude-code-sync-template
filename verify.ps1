@@ -160,9 +160,18 @@ if (Test-Path $filterConf) {
     $ruleCount = (Get-Content $filterConf | Where-Object { $_ -notmatch '^\s*#' -and $_ -notmatch '^\s*$' }).Count
     Write-Status "settings-filter.conf 存在（$ruleCount 条规则）" "Pass"; $PASSED++
 
+    # Python3 可用性检查（过滤机制依赖）
+    $hasPython = Get-Command python -ErrorAction SilentlyContinue
+    if ($hasPython) {
+        $pyVer = & python --version 2>&1
+        Write-Host "   ✅ $pyVer 可用"
+    } else {
+        Write-Status "settings-filter.conf 已配置但 python 不可用，过滤机制失效" "Fail"; $FAILED++
+    }
+
     if (Test-Path $filterScript) {
         # 格式检查 & 仓库合规检查
-        $checkOutput = & python3 $filterScript $repoSettings $filterConf --check 2>&1
+        $checkOutput = & python $filterScript $repoSettings $filterConf --check 2>&1
         if ($LASTEXITCODE -ne 0) {
             Write-Status "仓库 settings.json 含不合规内容：" "Fail"; $FAILED++
             $checkOutput | Where-Object { $_ -match 'BLOCKED|FILTERED|修正建议' } | ForEach-Object {
@@ -174,7 +183,7 @@ if (Test-Path $filterConf) {
 
         # 本地提示
         if (Test-Path $localSettings) {
-            $localCheck = & python3 $filterScript $localSettings $filterConf --check 2>&1
+            $localCheck = & python $filterScript $localSettings $filterConf --check 2>&1
             if ($LASTEXITCODE -ne 0) {
                 Write-Host "   ℹ️  本地 settings.json 有将被过滤的内容（不影响同步，push 时自动剥离）" -ForegroundColor Yellow
             }

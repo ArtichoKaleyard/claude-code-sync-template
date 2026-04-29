@@ -64,10 +64,12 @@ claude setup-token
 ```
 claude-config-sync/
 ├── sync.conf                    # 同步清单（配置化，按需修改）
+├── settings-filter.conf         # settings.json 同步过滤规则
+├── filter-settings.py           # Python 过滤引擎
 ├── claude/
 │   ├── CLAUDE.md               # 全局 AI 行为约束
 │   ├── settings/
-│   │   └── settings.json       # 全局设置（模型、语言等）
+│   │   └── settings.json       # 全局设置（经 filter 净化）
 │   ├── memory/                 # 项目记忆文件
 │   │   ├── MEMORY.md
 │   │   └── halo-blog-helper.md
@@ -94,6 +96,46 @@ dir   workspace    keep           workspace-scripts
 ```
 
 新增同步项只需在 `sync.conf` 加一行，`project memory` 由脚本内置处理。
+
+## settings.json 同步过滤
+
+部分配置需要跨节点共享（model、language、env），部分绑定特定节点（如 Windows 端 Clawd on Desk 注入的 hooks）。`settings-filter.conf` 定义过滤规则，push/pull 时自动在框架边界做内容过滤。
+
+**依赖**：Python 3（仅在启用过滤时需要，不可用时跳过并警告，不阻塞同步）。
+
+### 规则格式
+
+| 规则 | 格式 | 优先级 |
+|------|------|--------|
+| 值黑名单 | `-key ~~~ text` | 最高 |
+| 键黑名单 | `-key` | 中 |
+| 白名单 | `+key` | 低（非空时未命中不进入框架） |
+
+白名单空置时只启用黑名单（最小配置）。
+
+### 当前配置
+
+```conf
+-hooks ~~~ Clawd on Desk
+```
+
+效果：含 `Clawd on Desk` 的 hook 不进入仓库，跨平台 hook 不受影响。pull 时递归合并保留本地配置。
+
+### 更多示例
+
+```conf
+# 白名单模式：严格管控
++model
++language
++env
+-hooks
+
+# 白名单 + 值黑名单：env 整体同步但屏蔽特定变量
++model
++language
++env
+-env.API_TIMEOUT_MS
+```
 
 ## 日常使用
 
@@ -183,4 +225,4 @@ claude setup-token
 | `.ps1` | Windows PowerShell | 用户 |
 | `-windows.sh` | Windows Git Bash | AI（Bash 工具） |
 
-**最后更新**: 2026-02-28
+**最后更新**: 2026-04-30

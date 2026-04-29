@@ -78,9 +78,14 @@ else
                     # settings.json 同步过滤
                     if [ "$src" = "settings.json" ] && [ -f "${SCRIPT_DIR}/settings-filter.conf" ]; then
                         FILTER_SCRIPT="${SCRIPT_DIR}/filter-settings.py"
-                        if [ -f "$FILTER_SCRIPT" ]; then
-                            python3 "$FILTER_SCRIPT" "$local_path" "${SCRIPT_DIR}/settings-filter.conf" > "$repo_path"
+                        PYTHON=$(command -v python3 2>/dev/null || command -v python 2>/dev/null)
+                        if [ -f "$FILTER_SCRIPT" ] && [ -n "$PYTHON" ]; then
+                            "$PYTHON" "$FILTER_SCRIPT" "$local_path" "${SCRIPT_DIR}/settings-filter.conf" > "$repo_path"
                             echo "    ✅ $src（已过滤）"
+                        elif [ -f "$FILTER_SCRIPT" ]; then
+                            echo -e "    ${YELLOW}⚠️  settings-filter.conf 已配置但 python 不可用，跳过过滤${NC}"
+                            cp "$local_path" "$repo_path"
+                            echo "    ✅ $src"
                         else
                             cp "$local_path" "$repo_path"
                             echo "    ✅ $src"

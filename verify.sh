@@ -144,9 +144,18 @@ if [ -f "$FILTER_CONF" ]; then
     rule_count=$(grep -v '^\s*#' "$FILTER_CONF" | grep -v '^\s*$' | wc -l)
     echo -e "${GREEN}✅ settings-filter.conf 存在（${rule_count} 条规则）${NC}"; ((PASSED++))
 
+    # Python 可用性检查（过滤机制依赖）
+    PYTHON=$(command -v python3 2>/dev/null || command -v python 2>/dev/null)
+    if [ -n "$PYTHON" ]; then
+        py_ver=$("$PYTHON" --version 2>&1)
+        echo "   ✅ ${py_ver} 可用"
+    else
+        echo -e "${RED}❌ settings-filter.conf 已配置但 python 不可用，过滤机制失效${NC}"; ((FAILED++))
+    fi
+
     # 格式检查
-    if [ -f "$FILTER_SCRIPT" ]; then
-        fmt_errors=$(python3 "$FILTER_SCRIPT" /dev/null "$FILTER_CONF" 2>&1 || true)
+    if [ -f "$FILTER_SCRIPT" ] && [ -n "$PYTHON" ]; then
+        fmt_errors=$("$PYTHON" "$FILTER_SCRIPT" /dev/null "$FILTER_CONF" 2>&1 || true)
         if echo "$fmt_errors" | grep -q '格式错误'; then
             echo -e "${RED}❌ filter.conf 格式错误：${NC}"
             echo "$fmt_errors" | grep '格式错误' | while read -r err; do
@@ -159,8 +168,8 @@ if [ -f "$FILTER_CONF" ]; then
     fi
 
     # 仓库 settings.json 合规检查
-    if [ -f "$REPO_SETTINGS" ] && [ -f "$FILTER_SCRIPT" ]; then
-        check_result=$(python3 "$FILTER_SCRIPT" "$REPO_SETTINGS" "$FILTER_CONF" --check 2>&1)
+    if [ -f "$REPO_SETTINGS" ] && [ -f "$FILTER_SCRIPT" ] && [ -n "$PYTHON" ]; then
+        check_result=$("$PYTHON" "$FILTER_SCRIPT" "$REPO_SETTINGS" "$FILTER_CONF" --check 2>&1)
         check_exit=$?
         if [ $check_exit -ne 0 ]; then
             echo -e "${RED}❌ 仓库 settings.json 含不合规内容：${NC}"
@@ -174,8 +183,8 @@ if [ -f "$FILTER_CONF" ]; then
     fi
 
     # 本地 settings.json 提示
-    if [ -f "$LOCAL_SETTINGS" ] && [ -f "$FILTER_SCRIPT" ]; then
-        local_check=$(python3 "$FILTER_SCRIPT" "$LOCAL_SETTINGS" "$FILTER_CONF" --check 2>&1)
+    if [ -f "$LOCAL_SETTINGS" ] && [ -f "$FILTER_SCRIPT" ] && [ -n "$PYTHON" ]; then
+        local_check=$("$PYTHON" "$FILTER_SCRIPT" "$LOCAL_SETTINGS" "$FILTER_CONF" --check 2>&1)
         local_exit=$?
         if [ $local_exit -ne 0 ]; then
             echo -e "   ${YELLOW}ℹ️  本地 settings.json 有将被过滤的内容（不影响同步，push 时自动剥离）${NC}"

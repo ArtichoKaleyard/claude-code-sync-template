@@ -257,12 +257,15 @@ if (-not (Test-Path $ConfFile)) {
                     if ($src -eq "settings.json") {
                         $filterConf = Join-Path $ScriptDir "settings-filter.conf"
                         $filterScript = Join-Path $ScriptDir "filter-settings.py"
-                        if ((Test-Path $filterConf) -and (Test-Path $filterScript) -and (Test-Path $localPath)) {
-                            python3 $filterScript $repoPath $filterConf --merge $localPath | Set-Content -Path $localPath -Encoding UTF8
+                        $hasPython = Get-Command python -ErrorAction SilentlyContinue
+                        if ((Test-Path $filterConf) -and (Test-Path $filterScript) -and (Test-Path $localPath) -and $hasPython) {
+                            python $filterScript $repoPath $filterConf --merge $localPath | Set-Content -Path $localPath -Encoding UTF8
                             Write-ColorOutput "    ✅ $src（已合并）" "Green"
-                        } elseif ((Test-Path $filterConf) -and (Test-Path $filterScript)) {
-                            python3 $filterScript $repoPath $filterConf | Set-Content -Path $localPath -Encoding UTF8
+                        } elseif ((Test-Path $filterConf) -and (Test-Path $filterScript) -and $hasPython) {
+                            python $filterScript $repoPath $filterConf | Set-Content -Path $localPath -Encoding UTF8
                             Write-ColorOutput "    ✅ $src（已过滤）" "Green"
+                        } elseif ((Test-Path $filterConf) -and (Test-Path $filterScript)) {
+                            Write-ColorOutput "    ⚠️  settings-filter.conf 已配置但 python 不可用，跳过过滤" "Yellow"
                         } elseif (Has-Diff $src) {
                             Show-Diff $src $localPath $repoPath
                             $script:SkippedFiles += $src; $script:NeedsReview = $true

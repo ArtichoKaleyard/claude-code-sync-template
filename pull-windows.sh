@@ -262,13 +262,21 @@ else
                     # settings.json 合并模式：仓库白名单 key 覆盖本地，保留本地非白名单 key
                     if [ "$src" = "settings.json" ] && [ -f "${SCRIPT_DIR}/settings-filter.conf" ]; then
                         FILTER_SCRIPT="${SCRIPT_DIR}/filter-settings.py"
-                        if [ -f "$FILTER_SCRIPT" ] && [ -f "$local_path" ]; then
-                            python3 "$FILTER_SCRIPT" "$repo_path" "${SCRIPT_DIR}/settings-filter.conf" --merge "$local_path" > "${local_path}.tmp"
+                        PYTHON=$(command -v python3 2>/dev/null || command -v python 2>/dev/null)
+                        if [ -f "$FILTER_SCRIPT" ] && [ -f "$local_path" ] && [ -n "$PYTHON" ]; then
+                            "$PYTHON" "$FILTER_SCRIPT" "$repo_path" "${SCRIPT_DIR}/settings-filter.conf" --merge "$local_path" > "${local_path}.tmp"
                             mv "${local_path}.tmp" "$local_path"
                             echo "    ✅ $src（已合并）"
-                        elif [ -f "$FILTER_SCRIPT" ]; then
-                            python3 "$FILTER_SCRIPT" "$repo_path" "${SCRIPT_DIR}/settings-filter.conf" > "$local_path"
+                        elif [ -f "$FILTER_SCRIPT" ] && [ -n "$PYTHON" ]; then
+                            "$PYTHON" "$FILTER_SCRIPT" "$repo_path" "${SCRIPT_DIR}/settings-filter.conf" > "$local_path"
                             echo "    ✅ $src（已过滤）"
+                        elif [ -f "$FILTER_SCRIPT" ]; then
+                            echo -e "    ${YELLOW}⚠️  settings-filter.conf 已配置但 python 不可用，跳过过滤${NC}"
+                        elif has_diff "$src"; then
+                            show_diff "$src" "$local_path" "$repo_path"
+                            SKIPPED_FILES+=("$src")
+                            NEEDS_REVIEW=true
+                            echo -e "    ${YELLOW}⏸  $src（跳过，需审核）${NC}"
                         else
                             cp "$repo_path" "$local_path"
                             echo "    ✅ $src"

@@ -85,9 +85,14 @@ if (-not (Test-Path $ConfFile)) {
                     if ($src -eq "settings.json") {
                         $filterConf = Join-Path $ScriptDir "settings-filter.conf"
                         $filterScript = Join-Path $ScriptDir "filter-settings.py"
-                        if ((Test-Path $filterConf) -and (Test-Path $filterScript)) {
-                            python3 $filterScript $localPath $filterConf | Set-Content -Path $repoPath -Encoding UTF8
+                        $hasPython = Get-Command python -ErrorAction SilentlyContinue
+                        if ((Test-Path $filterConf) -and (Test-Path $filterScript) -and $hasPython) {
+                            python $filterScript $localPath $filterConf | Set-Content -Path $repoPath -Encoding UTF8
                             Write-ColorOutput "    ✅ $src（已过滤）" "Green"
+                        } elseif ((Test-Path $filterConf) -and (Test-Path $filterScript)) {
+                            Write-ColorOutput "    ⚠️  settings-filter.conf 已配置但 python 不可用，跳过过滤" "Yellow"
+                            Copy-Item $localPath -Destination $repoPath -Force
+                            Write-ColorOutput "    ✅ $src" "Green"
                         } else {
                             Copy-Item $localPath -Destination $repoPath -Force
                             Write-ColorOutput "    ✅ $src" "Green"
